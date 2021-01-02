@@ -17,30 +17,33 @@ Since a Nextion display was laying around in my lab, I created marax_monitor whi
 
 * Display and plot temperatures on a Nextion display
 ![Display](/misc/Display_explained.png)
-* Shot timer by attaching a reed switch to the vibration pump
+* Display a shot timer (a reed switch has to be attached to the vibration pump)
 ![Shot timer](/misc/Display_shot_timer.jpg)
 * Send data via MQTT to Node-RED and display data on it's dashboard 
 ![Node-RED dashboard](/misc/Node-RED_Dashboard.png)
 
 Additionally I've added ArduinoOTA for being able to upload updates over the network.
 
-The device is powered by 18650 LiPo battery, that's why I added a battery shield and a simple circuit for auto power off after
-an hour of inactivity for savaing energy. The battery lasts for about one week.
+The device is powered by an 18650 LiPo battery, that's why I've added a battery shield and a simple circuit for auto power off the monitor
+after an hour of inactivity for saving energy. The battery lasts for about one week.
+
+We're using marax_monitor for some weeks now and especially the shot timer is a feature which we do not want miss any more. I also like
+to watch the temperature profiles which is not so trivial I've thought of before. 
 
 ## BOM
 
-**Note:** I just used components which were available in my lab. Feel free to 
+**Note:** I just used components which were available in my lab.
 
 Required:
 * ESP8266 development board
 * Nextion Display, e.g. [Nextion NX4024T032](https://www.itead.cc/nextion-nx4024t032.html)
 * Reed switch, e.g. [MC-38](https://www.aliexpress.com/item/32255861885.html)
 
-Optional (for powering with battery):
+Optional (for battery powering):
 * Boost converter, e.g. WEMOS battery shield
 * Battery, e.g. LiPo 18650
 
-Optional (for having auto power off functionality):
+Optional (for auto power off functionality):
 * PNP and NPN MOSFETs, resistors, diode
 
 or 
@@ -58,14 +61,16 @@ Case (STL files for 3D printer):
 **Note:** You don't have to remove the complete housing of your espresso machine. Control unit and vibration pump can be easily 
 reached by only removing the maintenance hatch on the bottom.
 
-* The two wires of the serial connection (D5 and D6) has to be connected to the RX and TX pins of the MaraX control unit (third and 
-fourth pin counted if housing wall is on the left. For details please have a look on 
+* The two wires of the serial connection (D5 and D6) have to be connected to the RX and TX pins of the MaraX control unit (third and 
+fourth pin if housing wall is on the left). For details please have a look on 
 [calin's excellent post on reddit](https://www.reddit.com/r/espresso/comments/hft5zv/data_visualisation_lelit_marax_mod/)
 
 * Reed switch has to be attached to the vibration pump (I used double sided tape). For details please have a look at 
 [alexrus' great marax_timer project](https://github.com/alexrus/marax_timer)
 
 ### Monitor
+
+**Note:** As already mentioned I used components laying around my lab and put them together quick and dirty. 
 
 Device         			        | ESP8266 
 --------------------------------| --------
@@ -105,7 +110,8 @@ Project file for Nextion display (edited on Nextion Editor V1.61.2):
 * [marax_monitor_nextion.HMI](/hardware/marax_monitor_nextion.HMI)
 
 ### Miscellaneous
-* MaraX' control unit sends data via serial interface about twice per second. marax_monitor reads and displays this data every 5 seconds
+* MaraX' control unit sends data via serial interface about twice per second. But marax_monitor reads and displays this data only every 5 seconds 
+because that's enough 
 * If you've implemented auto power off: the device will be powered off after an hour of inactivity. You can manually power off by long 
 pressing the power off button. By short pressing the power off button the counter for auto power off will be reset.
 
