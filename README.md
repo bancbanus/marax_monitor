@@ -58,8 +58,8 @@ Case (STL files for 3D printer):
 
 ### MaraX
 
-**Note:** You don't have to remove the complete housing of your espresso machine. Control unit and vibration pump can be easily 
-reached by only removing the maintenance hatch on the bottom.
+**Note:** You don't have to remove the complete housing of your espresso machine or empty the boiler. Just turn the machine 90 degrees backwards. 
+Control unit and vibration pump can be easily reached by only removing the maintenance hatch on the bottom. 
 
 * The two wires of the serial connection (D5 and D6) have to be connected to the RX and TX pins of the MaraX control unit (third and 
 fourth pin if housing wall is on the left). For details please have a look on 
