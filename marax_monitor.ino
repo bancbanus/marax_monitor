@@ -1,4 +1,3 @@
-
 //NodeMCU 1.0 (ESP-12E)
 #define PIN_NEXT_RX   D7          // Serial TX Nextion Display
 #define PIN_NEXT_TX   D1          // Serial RX Nextion Display
@@ -16,19 +15,21 @@
 #include <arduino-timer.h>
 #include <SoftwareSerial.h>
 #include <ArduinoOTA.h>
+#include <ESP_EEPROM.h>
 
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
 SoftwareSerial maraSerial(PIN_MARA_RX, PIN_MARA_TX);
 SoftwareSerial nextSerial(PIN_NEXT_RX, PIN_NEXT_TX);
-auto timer = timer_create_default(); 
+auto timer = timer_create_default();
 
 byte timerSeconds = 0;
 bool timerStarted = false;
 long timerStartMillis = 0;
 long timerStopMillis = 0;
 long displayUpdateMillis = 0;
-long autoPowerOffMillis = 0; 
+long autoPowerOffMillis = 0;
+long isPoweredOff = 0;
 
 const byte numChars = 32;
 char receivedChars[numChars];
@@ -55,18 +56,20 @@ void setup() {
 
   delay(100);
 
+  //writeEEPROM(0);
+
   timer.every(200, shotTimer);
   timer.every(10000, getBattery);
   timer.every(100000, autoPowerOff);
 
   NexVisible( "nCounter", false );
+  NexVisible( "tStats", false );
   getBattery;
   autoPowerOffMillis = millis();
-  
+
   setup_wifi();
 
   if ( WiFi.status() == WL_CONNECTED) {
-    mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
 
     ArduinoOTA.onStart([]() {
       String type;
@@ -100,6 +103,11 @@ void setup() {
       }
     });
     ArduinoOTA.begin();
+
+    mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
+    if (!mqttClient.connected()) {
+      mqttReconnect();
+    }
   }
 }
 
@@ -108,6 +116,8 @@ void loop() {
   timer.tick();
 
   detectPump();
+  detectTouchscreen();
+  detectPowerbutton();
 
   receiveData();
 
@@ -117,23 +127,22 @@ void loop() {
       parseData();
       displayUpdateMillis = millis();
     }
-  }
-  if ( millis() - displayUpdateMillis > 10000 ) {
-    //machine was switched off
-    strncpy(receivedChars, "0,0,0,0,0,0,0", numChars);
-    parseData();
-    delay(5000);
+  } else {
+    if ( millis() - displayUpdateMillis > 5500 ) {
+      //machine was switched off
+      strncpy(receivedChars, "0,0,0,0,0,0,0", numChars);
+      parseData();
+      displayUpdateMillis = millis();
+    }
   } 
 
-  detectPowerbutton();
-
   if ( WiFi.status() == WL_CONNECTED) {
-    if (!mqttClient.connected()) {
-      mqttReconnect();
-    }
     ArduinoOTA.handle();
-    mqttClient.loop();          //MQTT
+    if (mqttClient.connected()) {
+      mqttClient.loop();
+    }
   }
+  
 }
 
 void receiveData() {
@@ -222,7 +231,7 @@ void parseData() {
 
   NexNumber( "nBoost", data[boost] );
 
-  if(data[heater]) {
+  if (data[heater]) {
     NexCircle("RED");
   } else {
     NexCircle("WHITE");
@@ -235,6 +244,7 @@ void detectPump() {
     timerStarted = true;
 
     NexVisible( "sWave", false );
+    NexVisible( "tStats", false );
     NexVisible( "nCounter", true );
     Serial.println("Start pump");
   }
@@ -249,6 +259,10 @@ void detectPump() {
       NexVisible( "nCounter", false );
       NexVisible( "sWave", true );
 
+      if( timerSeconds > 15 ) {
+        int shotCounter = readEEPROM( );
+        writeEEPROM( ++shotCounter );
+      }
       Serial.println("Stop pump");
     }
   } else {
@@ -271,15 +285,50 @@ void detectPowerbutton() {
       }
       if (millis() > (start + 100)) {
         //reset auto power counter off when short push
-        autoPowerOffMillis = millis();  
+        autoPowerOffMillis = millis();
+      }
+    }
+  }
+}
+
+void detectTouchscreen() {
+
+  char rc;
+  int count;
+  int a5count;
+  boolean gotData = false;
+  char textStats[20];
+
+  while (nextSerial.available()) {
+    rc = nextSerial.read();
+    Serial.printf("%02x ", rc);
+    delay(3);
+    count++;
+    if (rc == 0xa5) {
+      a5count++;
+    }
+    if (rc != 0xa5 && a5count > 2 && gotData == false) {
+      gotData = true;
+      displayUpdateMillis = millis();
+      if (rc == 0x01) {
+        Serial.print("Statistik");
+        //itoa(readEEPROM( ), textStats, 10);
+        sprintf(textStats, "%i shots", readEEPROM( ) );
+        
+        //textStats = textStats && " shots";
+        NexText( "tStats", textStats );
+        NexVisible( "tStats", true );
+      } else if (rc == 0x00) {
+        Serial.print("Keine Statistik");
+        NexVisible( "tStats", false );
       }
     }
   }
 }
 
 boolean autoPowerOff(void *) {
-  if (millis() - autoPowerOffMillis > PWR_OFF_AUTO) { 
-        digitalWrite(PIN_PWR, LOW);
+  if (millis() - autoPowerOffMillis > PWR_OFF_AUTO) {
+    digitalWrite(PIN_PWR, LOW);
   }
   return true;
 }
@@ -299,7 +348,7 @@ boolean getBattery(void *) {
     average += analogRead(A0);
   }
   average = average / 10;
-  
+
   NexNumber( "nBat", (int)round( average * 100.0 / 244 - 65000.0 / 244 ) );
   return true;
 }
@@ -307,7 +356,7 @@ boolean getBattery(void *) {
 void NexWave( byte id, byte ch, int val) {
 
   (val < 0) && ( val = 0 );
-  
+
   String cmd = "add ";
   cmd += id;
   cmd += ",";
@@ -328,6 +377,19 @@ void NexNumber( char* id, byte number) {
 
   cmd += ".val=";
   cmd += val;
+  nextSerial.print(cmd);
+  nextSerial.write(0xff);
+  nextSerial.write(0xff);
+  nextSerial.write(0xff);
+}
+
+void NexText( char* id, char* text ) {
+  String cmd = id;
+
+  cmd += ".txt=\"";
+  cmd += text;
+  cmd += "\"";
+  Serial.println(cmd);
   nextSerial.print(cmd);
   nextSerial.write(0xff);
   nextSerial.write(0xff);
@@ -356,7 +418,7 @@ void NexCircle( char* color ) {
 
   String cmd = "cirs 359,44,8,";
   cmd += color;
-  
+
   nextSerial.print(cmd);
   nextSerial.write(0xff);
   nextSerial.write(0xff);
@@ -389,14 +451,38 @@ void setup_wifi() {
 }
 
 void mqttReconnect() {
+  int tries = 0;
+
   while (!mqttClient.connected()) {
     Serial.println("Reconnecting MQTT...");
+    if (tries > 3) {
+      break;
+    }
     if (!mqttClient.connect("mqttClient")) {
       Serial.print("failed, rc=");
       Serial.print(mqttClient.state());
-      Serial.println(" retrying in 2 seconds");
-      delay(2000);
+      Serial.println(" retrying in 1 seconds");
+      tries++;
+      delay(1000);
     }
   }
-  Serial.println("MQTT Connected...");
+  if (mqttClient.connected()) {
+    Serial.println("MQTT Connected...");
+  } else {
+    Serial.println("MQTT Connection failed...");
+  }
+}
+
+int readEEPROM( ) {
+  int savedValue;
+  EEPROM.begin(16);
+  EEPROM.get(0, savedValue);
+  return savedValue;
+}
+
+void writeEEPROM( int value ) {
+  EEPROM.begin(16);
+  EEPROM.put(0, value);
+  boolean ok1 = EEPROM.commit();
+  Serial.println((ok1) ? "First commit OK" : "Commit failed");
 }
