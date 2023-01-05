@@ -12,6 +12,7 @@ two projects from where I got a lot of ideas and information (thank you!):
 
 * [calin's excellent post on reddit](https://www.reddit.com/r/espresso/comments/hft5zv/data_visualisation_lelit_marax_mod/)
 * [alexrus' great marax_timer project](https://github.com/alexrus/marax_timer)
+* [lelit insider's video](https://youtu.be/9NL6yeq7sMM)
 
 Since a Nextion display was laying around in my lab, I created marax_monitor which does the following:
 
