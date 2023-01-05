@@ -63,10 +63,13 @@ Control unit and vibration pump can be easily reached by only removing the maint
 
 * The two wires of the serial connection (D5 and D6) have to be connected to the RX and TX pins of the MaraX control unit (third and 
 fourth pin if housing wall is on the left). For details please have a look on 
-[calin's excellent post on reddit](https://www.reddit.com/r/espresso/comments/hft5zv/data_visualisation_lelit_marax_mod/)
+[calin's excellent post on reddit](https://www.reddit.com/r/espresso/comments/hft5zv/data_visualisation_lelit_marax_mod/) or screenshot below
 
 * Reed switch has to be attached to the vibration pump (I used double sided tape). For details please have a look at 
 [alexrus' great marax_timer project](https://github.com/alexrus/marax_timer)
+
+![MaraX' control box](/hardware/marax_control_box.png)
+
 
 ### Monitor
 
