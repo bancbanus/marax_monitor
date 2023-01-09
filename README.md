@@ -60,10 +60,10 @@ Case (STL files for 3D printer):
 ### MaraX
 
 **Note:** You don't have to remove the complete housing of your espresso machine or empty the boiler. Just turn the machine 90 degrees backwards. 
-Control unit and vibration pump can be easily reached by only removing the maintenance hatch on the bottom. 
+Control unit and vibration pump can be easily reached by only removing the maintenance hatch on the bottom.
 
-* The two wires of the serial connection (D5 and D6) have to be connected to the RX and TX pins of the MaraX control unit (third and 
-fourth pin if housing wall is on the left). For details please have a look on 
+* The three wires of the serial connection (GND, D5 and D6) have to be connected to the GND, RX and TX pins of the MaraX control unit (2nd, 3rd and 
+4th pin from the center to the edge). For details please have a look on 
 [calin's excellent post on reddit](https://www.reddit.com/r/espresso/comments/hft5zv/data_visualisation_lelit_marax_mod/) or screenshot below
 
 * Reed switch has to be attached to the vibration pump (I used double sided tape). For details please have a look at 
@@ -76,18 +76,20 @@ fourth pin if housing wall is on the left). For details please have a look on
 
 **Note:** As already mentioned I used components laying around my lab and put them together quick and dirty. 
 
-Device         			        | ESP8266 
---------------------------------| --------
-RX pin from MaraX' control unit | D6
-TX pin from MaraX' control unit | D5
-1st wire from reed switch       | D3
-2nd wire from reed switch       | GND
-RX pin from Nextion display     | D1
-TX pin from Nextion display     | D7
+Device         			                       | ESP8266 
+-------------------------------------------| --------
+GND pin from MaraX' control unit (2nd pin) | GND
+RX pin from MaraX' control unit (3rd pin)  | D6
+TX pin from MaraX' control unit (4th pin)  | D5
+1st wire from reed switch                  | D3
+2nd wire from reed switch                  | GND
+RX pin from Nextion display                | D1
+TX pin from Nextion display                | D7
+GND pin from Nextion display               | GND
 
 Optional (for auto power off and battery status):
 
-Device         			          | ESP8266 
+Device         			              | ESP8266 
 ----------------------------------| --------
 Gate of NPN MOSFET (power drive)  | D0
 Push button (for power on/off)    | D2
